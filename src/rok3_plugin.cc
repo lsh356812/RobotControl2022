@@ -138,12 +138,158 @@ namespace gazebo
     GZ_REGISTER_MODEL_PLUGIN(rok3_plugin);
 }
 
+//get transform I0
+MatrixXd getTransformI0(){
+    MatrixXd tmp_m(4, 4);   
+    
+    tmp_m << 1, 0, 0, 0, \
+             0, 1, 0, 0, \
+             0, 0, 1, 0, \
+             0, 0, 0, 1;
+    
+    
+    
+    
+    return tmp_m;
+}
+
+MatrixXd getTransform3E(){
+    MatrixXd tmp_m(4,4);   
+    
+    tmp_m << 1, 0, 0, 0, \
+             0, 1, 0, 0, \
+             0, 0, 1, 1, \
+             0, 0, 0, 1;
+    
+    
+    
+    
+    return tmp_m;
+}
+MatrixXd JointToTransform01(VectorXd q){
+    //q : generalized cordinates(q1,q2,q3)
+    
+    
+    MatrixXd tmp_m(4,4);   
+    double qq = q(0);
+    
+    tmp_m << cos(qq), 0, sin(qq), 0, \
+             0, 1, 0, 0, \
+             -sin(qq), 0, cos(qq), 1, \
+             0, 0, 0, 1;
+    
+    
+    
+    
+    return tmp_m;
+}
+MatrixXd JointToTransform12(VectorXd q){
+    //q : generalized cordinates(q1,q2,q3)
+    
+    
+    MatrixXd tmp_m(4,4);   
+    double qq = q(1);
+    
+    tmp_m << cos(qq), 0, sin(qq), 0, \
+             0, 1, 0, 0, \
+             -sin(qq), 0, cos(qq), 1, \
+             0, 0, 0, 1;
+    
+    
+    
+    
+    return tmp_m;
+}
+MatrixXd JointToTransform23(VectorXd q){
+    //q : generalized cordinates(q1,q2,q3)
+    
+    
+    MatrixXd tmp_m(4,4);   
+    double qq = q(2);
+    
+    tmp_m << cos(qq), 0, sin(qq), 0, \
+             0, 1, 0, 0, \
+             -sin(qq), 0, cos(qq), 1, \
+             0, 0, 0, 1;
+    
+    
+    
+    
+    return tmp_m;
+}
+
+VectorXd jointToPosition(VectorXd q){
+    VectorXd tmp_v = VectorXd::Zero(3);
+    MatrixXd tmp_m(4,4);
+    
+    tmp_m = JointToTransform01(q);
+    tmp_m = JointToTransform12(q);
+    tmp_m = JointToTransform23(q);
+    
+    tmp_v = tmp_m.block(0,3,3,1);
+    
+    return tmp_v;
+}
+
+MatrixXd jointToRotMat(MatrixXd tmp_m){
+    //VectorXd tmp_r = VectorXd::Zero(3);
+    MatrixXd tmp_r(3,3);
+    
+    tmp_r = tmp_m.block(0,0,2,2);
+    return tmp_r;
+}
+
+VectorXd rotToEuler(MatrixXd tmp_m){
+    Vector3d q_e;
+    q_e(0) = atan2(tmp_m(1,0), tmp_m(0,0));
+    q_e(1) = atan2(-tmp_m(2,0), sqrt(tmp_m(2,1)*tmp_m(2,1) + tmp_m(2,2)*tmp_m(2,2)));
+    q_e(2) = atan2(tmp_m(2,1),tmp_m(2,2));
+    
+    return q_e;
+}
+
+void Practice(){
+    
+    MatrixXd TI0(4,4), T3E(4,4), T01(4,4), T12(4,4), T23(4,4), TIE(4,4);
+    MatrixXd pos(3,3), CIE(3,3);
+    
+    Vector3d q = {30,30,30};
+    Vector3d euler;
+    q = q*PI/180;
+    
+    TI0 = getTransformI0();
+    T3E = getTransform3E();
+    T01 = JointToTransform01(q);
+    T12 = JointToTransform12(q);
+    T23 = JointToTransform23(q);
+    
+    TIE = TI0*T01*T12*T23*T3E;
+    
+    pos = jointToPosition(q);
+    CIE = jointToRotMat(q);
+    euler = rotToEuler(CIE);
+    
+    /*std::cout << "Hello world" << std::endl;
+    std::cout << "TI0 : "<< TI0 << std::endl;
+    std::cout << "T3E : "<< T3E << std::endl;
+    std::cout << "T01 : "<< T01 << std::endl;
+    std::cout << "T12 : "<< T12 << std::endl;
+    std::cout << "T23 : "<< T23 << std::endl;*/
+    std::cout << "TIE : "<< TIE << std::endl;
+    
+    std::cout << "Position : "<< pos << std::endl;
+    std::cout << "CIE : "<< CIE << std::endl;
+    std::cout << "Euler : "<< euler << std::endl;
+    
+    
+}
+
 void gazebo::rok3_plugin::Load(physics::ModelPtr _model, sdf::ElementPtr /*_sdf*/)
 {
     /*
      * Loading model data and initializing the system before simulation 
      */
-
+    Practice();
     //* model.sdf file based model data input to [physics::ModelPtr model] for gazebo simulation
     model = _model;
 
