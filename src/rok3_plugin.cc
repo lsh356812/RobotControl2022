@@ -219,24 +219,36 @@ MatrixXd JointToTransform23(VectorXd q){
 }
 
 VectorXd jointToPosition(VectorXd q){
-    VectorXd tmp_v = VectorXd::Zero(3);
-    MatrixXd tmp_m(4,4);
+     MatrixXd TI0(4,4),T3E(4,4),T01(4,4),T12(4,4),T23(4,4),TIE(4,4);
+    TI0 = getTransformI0();
+    T3E = getTransform3E();
+    T01 = JointToTransform01(q);
+    T12 = JointToTransform12(q);
+    T23 = JointToTransform23(q);   
+    TIE = TI0*T01*T12*T23*T3E;
     
-    tmp_m = JointToTransform01(q);
-    tmp_m = JointToTransform12(q);
-    tmp_m = JointToTransform23(q);
+    Vector3d pos;
     
-    tmp_v = tmp_m.block(0,3,3,1);
+    pos = TIE.block(0,3,3,1);
     
-    return tmp_v;
+    return pos;
 }
 
-MatrixXd jointToRotMat(MatrixXd tmp_m){
+MatrixXd jointToRotMat(VectorXd q){
     //VectorXd tmp_r = VectorXd::Zero(3);
-    MatrixXd tmp_r(3,3);
+   MatrixXd TI0(4,4),T3E(4,4),T01(4,4),T12(4,4),T23(4,4),TIE(4,4);
+    TI0 = getTransformI0();
+    T3E = getTransform3E();
+    T01 = JointToTransform01(q);
+    T12 = JointToTransform12(q);
+    T23 = JointToTransform23(q);   
+    TIE = TI0*T01*T12*T23*T3E;
     
-    tmp_r = tmp_m.block(0,0,2,2);
-    return tmp_r;
+    MatrixXd rot_m(3,3);
+    rot_m<<TIE(0,0),TIE(0,1),TIE(0,2),\
+          TIE(1,0),TIE(1,1),TIE(1,2),\
+          TIE(2,0),TIE(2,1),TIE(2,2);
+    return rot_m;
 }
 
 VectorXd rotToEuler(MatrixXd tmp_m){
