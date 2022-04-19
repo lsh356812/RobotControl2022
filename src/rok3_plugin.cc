@@ -185,7 +185,7 @@ MatrixXd JointToTransform01(VectorXd q){  //yaw
     return tmp_m;
 }
 MatrixXd JointToTransform12(VectorXd q){   //roll
-    //q : generalized cordinates(q1,q2,q3)
+    //q : generalized cordinates(q1,q2,q3)..
     
     
     MatrixXd tmp_m(4,4);   
