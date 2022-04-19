@@ -256,6 +256,7 @@ MatrixXd JointToTransform56(VectorXd q){    //roll
     //q : generalized cordinates(q1,q2,q3)
     
     
+   
     MatrixXd tmp_m(4,4);   
     double qq = q(5);
     
@@ -417,6 +418,19 @@ void gazebo::rok3_plugin::UpdateAlgorithm()
 
     //* Read Sensors data
     GetjointData();
+    
+    joint[LHY].targetRadian = 10*3.14/180;
+    joint[LHR].targetRadian = 20*3.14/180;
+    joint[LHP].targetRadian = 30*3.14/180;
+    joint[LKN].targetRadian = 40*3.14/180;
+    joint[LAP].targetRadian = 50*3.14/180;
+    joint[LAR].targetRadian = 60*3.14/180;
+    
+    
+    
+    
+    
+    
     
     //* Joint Controller
     jointController();
