@@ -318,7 +318,122 @@ VectorXd rotToEuler(MatrixXd tmp_m){
     
     return q_e;
 }
+MatrixXd jointToPosJac(VectorXd q){
+    
+    MatrixXd J_P = MatrixXd::Zero(3,6);
+    MatrixXd T_I0(4,4), T_01(4,4), T_12(4,4), T_23(4,4), T_34(4,4), T_45(4,4), T_56(4,4), T_6E(4,4), T_IE(4,4); 
+    MatrixXd T_I1(4,4), T_I2(4,4), T_I3(4,4), T_I4(4,4), T_I5(4,4), T_I6(4,4); 
+    MatrixXd R_I1(3,3), R_I2(3,3), R_I3(3,3), R_I4(3,3), R_I5(3,3), R_I6(3,3);
+    Vector3d r_I_I1, r_I_I2, r_I_I3, r_I_I4, r_I_I5, r_I_I6;
+    Vector3d n_1, n_2, n_3, n_4, n_5, n_6; 
+    Vector3d n_I_1, n_I_2, n_I_3, n_I_4, n_I_5, n_I_6; 
+    Vector3d r_I_IE;
+    
+    T_I0 = getTransformI0();
+    T_01 = JointToTransform01(q);
+    T_12 = JointToTransform12(q);
+    T_23 = JointToTransform23(q);  
+    T_34 = JointToTransform34(q);
+    T_45 = JointToTransform45(q);
+    T_56 = JointToTransform56(q);
+    T_6E = getTransform6E();
+    
+    T_I1 = T_I0*T_01;
+    T_I2 = T_I0*T_01*T_12;                              //=T_I1*T_12
+    T_I3 = T_I0*T_01*T_12*T_23;                       //=T_I2*T_23
+    T_I4 = T_I0*T_01*T_12*T_23*T_34;                //=T_I3*T_34
+    T_I5 = T_I0*T_01*T_12*T_23*T_34*T_45;         //=T_I4*T_45
+    T_I6 = T_I0*T_01*T_12*T_23*T_34*T_45*T_56;  //=T_I5*T_56
+    
+    R_I1 = T_I1.block(0,0,3,3);
+    R_I2 = T_I2.block(0,0,3,3);
+    R_I3 = T_I3.block(0,0,3,3);
+    R_I4 = T_I4.block(0,0,3,3);
+    R_I5 = T_I5.block(0,0,3,3);
+    R_I6 = T_I6.block(0,0,3,3);
+    
+    r_I_I1 = T_I1.block(0,3,3,1);
+    r_I_I2 = T_12.block(0,3,3,1);
+    r_I_I3 = T_23.block(0,3,3,1);
+    r_I_I4 = T_34.block(0,3,3,1);
+    r_I_I5 = T_45.block(0,3,3,1);
+    r_I_I6 = T_56.block(0,3,3,1);
+    
+    n_1 << 0,0,1;
+    n_2 << 1,0,0;
+    n_3 << 0,1,0;
+    n_4 << 0,1,0;
+    n_5 << 0,1,0;
+    n_6 << 1,0,0;
+    
+    n_I_1 = R_I1*n_1;
+    n_I_2 = R_I2*n_2;
+    n_I_3 = R_I3*n_3;
+    n_I_4 = R_I4*n_4;
+    n_I_5 = R_I5*n_5;
+    n_I_6 = R_I6*n_6;
+    
+    T_IE = T_I6* T_6E;
+    r_I_IE = T_IE.block(0,3,3,1);
+    
+    J_P.col(0) << n_I_1.cross(r_I_IE-r_I_I1);
+    J_P.col(1) << n_I_2.cross(r_I_IE-r_I_I2);
+    J_P.col(2) << n_I_3.cross(r_I_IE-r_I_I3);
+    J_P.col(3) << n_I_4.cross(r_I_IE-r_I_I4);
+    J_P.col(4) << n_I_5.cross(r_I_IE-r_I_I5);
+    J_P.col(5) << n_I_6.cross(r_I_IE-r_I_I6);
+    
+    return J_P;
+}
 
+MatrixXd jointToRotJac(VectorXd q){
+    
+    MatrixXd J_R(3,6);
+    MatrixXd T_I0(4,4), T_01(4,4), T_12(4,4), T_23(4,4), T_34(4,4), T_45(4,4), T_56(4,4), T_6E(4,4), T_IE(4,4); 
+    MatrixXd T_I1(4,4), T_I2(4,4), T_I3(4,4), T_I4(4,4), T_I5(4,4), T_I6(4,4); 
+    MatrixXd R_I1(3,3), R_I2(3,3), R_I3(3,3), R_I4(3,3), R_I5(3,3), R_I6(3,3);
+    Vector3d n_1, n_2, n_3, n_4, n_5, n_6; 
+    
+    T_I0 = getTransformI0();
+    T_01 = JointToTransform01(q);
+    T_12 = JointToTransform12(q);
+    T_23 = JointToTransform23(q);  
+    T_34 = JointToTransform34(q);
+    T_45 = JointToTransform45(q);
+    T_56 = JointToTransform56(q);
+    T_6E = getTransform6E();
+    
+    T_I1 = T_I0*T_01;
+    T_I2 = T_I0*T_01*T_12;                              //=T_I1*T_12
+    T_I3 = T_I0*T_01*T_12*T_23;                       //=T_I2*T_23
+    T_I4 = T_I0*T_01*T_12*T_23*T_34;                //=T_I3*T_34
+    T_I5 = T_I0*T_01*T_12*T_23*T_34*T_45;         //=T_I4*T_45
+    T_I6 = T_I0*T_01*T_12*T_23*T_34*T_45*T_56;  //=T_I5*T_56
+    
+    R_I1 = T_I1.block(0,0,3,3);
+    R_I2 = T_I2.block(0,0,3,3);
+    R_I3 = T_I3.block(0,0,3,3);
+    R_I4 = T_I4.block(0,0,3,3);
+    R_I5 = T_I5.block(0,0,3,3);
+    R_I6 = T_I6.block(0,0,3,3);
+    
+    n_1 << 0,0,1;
+    n_2 << 1,0,0;
+    n_3 << 0,1,0;
+    n_4 << 0,1,0;
+    n_5 << 0,1,0;
+    n_6 << 1,0,0;
+    
+    J_R.col(0) << R_I1*n_1;
+    J_R.col(1) << R_I2*n_2;
+    J_R.col(2) << R_I3*n_3;
+    J_R.col(3) << R_I4*n_4;
+    J_R.col(4) << R_I5*n_5;
+    J_R.col(5) << R_I6*n_6;
+    
+    
+    return J_R;
+}
 void Practice(){
     //0411 실습
     MatrixXd TI0(4,4),T6E(4,4),T01(4,4),T12(4,4),T23(4,4),T34(4,4),T45(4,4),T56(4,4),TIE(4,4);
@@ -326,10 +441,14 @@ void Practice(){
     VectorXd q(6);
     q << 10*D2R, 20*D2R, 30*D2R, 40*D2R, 50*D2R, 60*D2R;
     Vector3d euler;
+    MatrixXd test_pos_Jac(3,6), test_rot_Jac(3,6);
     
-   
-    
-    TI0 = getTransformI0();
+    //0502 실습 jointToPosJac
+    test_pos_Jac << jointToPosJac(q);
+    test_rot_Jac << jointToRotJac(q);
+    std::cout << "Test, J_P : "<< test_pos_Jac << std::endl;
+    std::cout << "Test, J_R : "<< test_rot_Jac << std::endl;
+    /*TI0 = getTransformI0();
     T6E = getTransform6E();
     T01 = JointToTransform01(q);
     T12 = JointToTransform12(q);
@@ -341,7 +460,7 @@ void Practice(){
     
     pos = jointToPosition(q);
     CIE = jointToRotMat(q);
-    euler = rotToEuler(CIE);
+    euler = rotToEuler(CIE);*/
     
     
     
@@ -361,6 +480,7 @@ void Practice(){
     
     
 }
+
 
 void gazebo::rok3_plugin::Load(physics::ModelPtr _model, sdf::ElementPtr /*_sdf*/)
 {
