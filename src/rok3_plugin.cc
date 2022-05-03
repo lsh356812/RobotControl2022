@@ -447,7 +447,7 @@ void Practice(){
     test_pos_Jac << jointToPosJac(q);
     test_rot_Jac << jointToRotJac(q);
     std::cout << "Test, J_P : "<< test_pos_Jac << std::endl;
-    std::cout << "Test, J_R : "<< test_rot_Jac << std::endl;
+    std::cout << "Test, J_R : "<< test_rot_Jac << std::endl;//..
     /*TI0 = getTransformI0();
     T6E = getTransform6E();
     T01 = JointToTransform01(q);
