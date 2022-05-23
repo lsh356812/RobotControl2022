@@ -434,6 +434,64 @@ MatrixXd jointToRotJac(VectorXd q){
     
     return J_R;
 }
+
+MatrixXd pseudoInverseMat(MatrixXd A, double lambda){
+    // Input: Any m-by-n matrix
+    // Output: An n-by-m pseudo-inverse of the input according to the Moore-Penrose formula
+    MatrixXd pinvA;
+    MatrixXd tmp_m;
+
+    int m = A.rows();
+    int n = A.cols();
+
+    MatrixXd A_T = A.transpose();
+
+    if(m >= n){
+        tmp_m = A_T*A + lambda*lambda*(MatrixXd::Identity(n,n));
+        pinvA = tmp_m.inverse()*A_T;
+        std::cout << "pinvAl : " << pinvA << std::endl;
+    }
+
+    else{
+        tmp_m = A*A_T + lambda*lambda*(MatrixXd::Identity(m,m));
+        pinvA = A_T*tmp_m.inverse();
+        std::cout << "pinvAr : " << pinvA << std::endl;
+    }
+     
+    return pinvA;
+}
+
+VectorXd rotMatToRotVec(MatrixXd C)
+{
+    Vector3d phi,n;
+    double th;
+
+    th = acos((C(0,0)+C(1,1)+C(2,2)-1)/2);
+
+    if(fabs(th)<0.001){
+         n << 0,0,0;
+    }
+    else{
+        n << C(2,1)-C(1,2), \
+             C(0,2)-C(2,0), \
+             C(1,0)-C(0,1);
+        n = n/(2*sin(th));
+    }
+
+    phi = th*n;
+
+    return phi;
+}
+
+MatrixXd jointToGeoJac(VectorXd q)
+{
+    MatrixXd Jacobian = MatrixXd::Zero(6,6);
+    Jacobian << jointToPosJac(q), jointToRotJac(q);
+
+    return Jacobian;
+}
+
+
 void Practice(){
     //0411 실습
     MatrixXd TI0(4,4),T6E(4,4),T01(4,4),T12(4,4),T23(4,4),T34(4,4),T45(4,4),T56(4,4),TIE(4,4);
@@ -447,7 +505,7 @@ void Practice(){
     test_pos_Jac << jointToPosJac(q);
     test_rot_Jac << jointToRotJac(q);
     std::cout << "Test, J_P : "<< test_pos_Jac << std::endl;
-    std::cout << "Test, J_R : "<< test_rot_Jac << std::endl;//..
+    std::cout << "Test, J_R : "<< test_rot_Jac << std::endl;
     /*TI0 = getTransformI0();
     T6E = getTransform6E();
     T01 = JointToTransform01(q);
@@ -462,21 +520,44 @@ void Practice(){
     CIE = jointToRotMat(q);
     euler = rotToEuler(CIE);*/
     
+    //0513 실습
+    MatrixXd J(6,6);
+    J << jointToPosJac(q),\
+         jointToRotJac(q);
+
+    MatrixXd pinvj;
+    pinvj = pseudoInverseMat(J, 0.0);
+
+    MatrixXd invj;
+    invj = J.inverse();
+    std::cout<<" Test, Inverse"<<invj<<std::endl;
+    std::cout<<" Test, PseudoInverse"<<pinvj<<std::endl;
     
-    
-    
+    VectorXd q_des(6),q_init(6);
+    MatrixXd C_err(3,3), C_des(3,3), C_init(3,3);
+
+    q_init = 0.5*q_des;
+    C_des = jointToRotMat(q_des);
+    C_init = jointToRotMat(q_init);
+    C_err = C_des * C_init.transpose();
+
+    VectorXd dph(3);
+
+    dph = rotMatToRotVec(C_err);
+
+    std::cout<<" Test, Rotational Vector"<<pinvj<<std::endl;
     
     /*std::cout << "Hello world" << std::endl;
     std::cout << "TI0 : "<< TI0 << std::endl;
     std::cout << "T3E : "<< T3E << std::endl;
     std::cout << "T01 : "<< T01 << std::endl;
     std::cout << "T12 : "<< T12 << std::endl;
-    std::cout << "T23 : "<< T23 << std::endl;*/
+    std::cout << "T23 : "<< T23 << std::endl;
     std::cout << "TIE : "<< TIE << std::endl;
     
     std::cout << "Position : "<< pos << std::endl;
     std::cout << "CIE : "<< CIE << std::endl;
-    std::cout << "Euler : "<< euler << std::endl;
+    std::cout << "Euler : "<< euler << std::endl;*/
     
     
 }
